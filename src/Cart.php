@@ -461,7 +461,11 @@ class Cart
             $cartItem->setQuantity($qty);
         }
 
-        $cartItem->setTaxRate(config('cart.tax'));
+        if ($id instanceof Buyable) {
+            $cartItem->setTaxRate($id);
+        } else {
+            $cartItem->setTaxRate(config('cart.tax'));
+        }
 
         return $cartItem;
     }

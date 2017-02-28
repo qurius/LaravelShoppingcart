@@ -62,7 +62,14 @@ class CartItem implements Arrayable
      *
      * @var int|float
      */
-    private $taxRate = 0;
+    private $taxRate = 0;    
+
+    /**
+     * The shipping for the cart item.
+     *
+     * @var int|float
+     */
+    private $shipping = 0;
 
     /**
      * CartItem constructor.
@@ -237,7 +244,11 @@ class CartItem implements Arrayable
      */
     public function setTaxRate($taxRate)
     {
-        $this->taxRate = $taxRate;
+        if ($taxRate instanceof Buyable ) {
+            $this->taxRate = $taxRate->tax_rate;
+        } else {
+            $this->taxRate = $taxRate;
+        }
         
         return $this;
     }
