@@ -239,7 +239,7 @@ class Cart
         $content = $this->getContent();
 
         $total = $content->reduce(function ($total, CartItem $cartItem) {
-            return $total + ($cartItem->qty * $cartItem->priceTax);
+            return $total + ($cartItem->qty * $cartItem->priceTax) +  ($cartItem->qty * $cartItem->shipping);
         }, 0);
 
         return $this->numberFormat($total, $decimals, $decimalPoint, $thousandSeperator);
@@ -264,6 +264,17 @@ class Cart
         return $this->numberFormat($tax, $decimals, $decimalPoint, $thousandSeperator);
     }
 
+    public function shipping($decimals = null, $decimalPoint = null, $thousandSeperator = null)
+    {
+        $content = $this->getContent();
+
+        $shipping = $content->reduce(function ($shipping, CartItem $cartItem) {
+            return $shipping + ($cartItem->qty * $cartItem->shipping);
+        }, 0);
+
+        return $this->numberFormat($shipping, $decimals, $decimalPoint, $thousandSeperator);
+    }
+
     /**
      * Get the subtotal (total - tax) of the items in the cart.
      *
@@ -277,7 +288,7 @@ class Cart
         $content = $this->getContent();
 
         $subTotal = $content->reduce(function ($subTotal, CartItem $cartItem) {
-            return $subTotal + ($cartItem->qty * $cartItem->price);
+            return $subTotal + ($cartItem->qty * $cartItem->price) ;
         }, 0);
 
         return $this->numberFormat($subTotal, $decimals, $decimalPoint, $thousandSeperator);
@@ -332,6 +343,25 @@ class Cart
         $cartItem = $this->get($rowId);
 
         $cartItem->setTaxRate($taxRate);
+
+        $content = $this->getContent();
+
+        $content->put($cartItem->rowId, $cartItem);
+
+        $this->session->put($this->instance, $content);
+    }    
+    /**
+     * Set the tax rate for the cart item with the given rowId.
+     *
+     * @param string    $rowId
+     * @param int|float $taxRate
+     * @return void
+     */
+    public function setShipping($rowId, $shipping_amount)
+    {
+        $cartItem = $this->get($rowId);
+
+        $cartItem->setShippingAmount($shipping_amount);
 
         $content = $this->getContent();
 
@@ -465,7 +495,10 @@ class Cart
             $cartItem->setTaxRate($id);
         } else {
             $cartItem->setTaxRate(config('cart.tax'));
-        }
+        }        
+        if ($id instanceof Buyable) {
+            $cartItem->setShippingAmount($id);
+        } 
 
         return $cartItem;
     }

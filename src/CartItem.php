@@ -280,7 +280,7 @@ class CartItem implements Arrayable
         if($attribute === 'tax') {
             return $this->price * ($this->taxRate / 100);
         }
-        
+             
         if($attribute === 'taxTotal') {
             return $this->tax * $this->qty;
         }
@@ -360,7 +360,8 @@ class CartItem implements Arrayable
             'price'    => $this->price,
             'options'  => $this->options,
             'tax'      => $this->tax,
-            'subtotal' => $this->subtotal
+            'subtotal' => $this->subtotal,
+            'shipping' => $this->shipping,
         ];
     }
 
@@ -386,5 +387,15 @@ class CartItem implements Arrayable
         }
 
         return number_format($value, $decimals, $decimalPoint, $thousandSeperator);
+    }
+    public function setShippingAmount($shipping_amount)
+    {
+        if ($shipping_amount instanceof Buyable ) {
+            $this->shipping = $shipping_amount->shipping_amount;
+        } else {
+            $this->shipping = $shipping_amount;
+        }
+        
+        return $this;
     }
 }
