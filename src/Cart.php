@@ -86,7 +86,7 @@ class Cart
      * @param array     $options
      * @return \Gloudemans\Shoppingcart\CartItem
      */
-    public function add($id, $name = null, $qty = null, $price = null, array $options = [])
+    public function add($id, $name = null, $qty = null, $price = null,$weight = null, array $options = [])
     {
         if ($this->isMulti($id)) {
             return array_map(function ($item) {
@@ -94,7 +94,7 @@ class Cart
             }, $id);
         }
 
-        $cartItem = $this->createCartItem($id, $name, $qty, $price, $options);
+        $cartItem = $this->createCartItem($id, $name, $qty, $price,$weight, $options);
 
         $content = $this->getContent();
 
@@ -357,11 +357,11 @@ class Cart
      * @param int|float $taxRate
      * @return void
      */
-    public function setShipping($rowId, $shipping_amount)
+    public function setShipping($rowId, $shipping_rate)
     {
         $cartItem = $this->get($rowId);
 
-        $cartItem->setShippingAmount($shipping_amount);
+        $cartItem->setShippingRate($shipping_rate);
 
         $content = $this->getContent();
 
@@ -448,6 +448,9 @@ class Cart
 
         if($attribute === 'subtotal') {
             return $this->subtotal();
+        }        
+        if($attribute === 'shipping') {
+            return $this->shipping();
         }
 
         return null;
@@ -477,7 +480,7 @@ class Cart
      * @param array     $options
      * @return \Gloudemans\Shoppingcart\CartItem
      */
-    private function createCartItem($id, $name, $qty, $price, array $options)
+    private function createCartItem($id, $name, $qty, $price,$weight, array $options)
     {
         if ($id instanceof Buyable) {
             $cartItem = CartItem::fromBuyable($id, $qty ?: []);
@@ -487,7 +490,7 @@ class Cart
             $cartItem = CartItem::fromArray($id);
             $cartItem->setQuantity($id['qty']);
         } else {
-            $cartItem = CartItem::fromAttributes($id, $name, $price, $options);
+            $cartItem = CartItem::fromAttributes($id, $name, $price,$weight, $options);
             $cartItem->setQuantity($qty);
         }
 
@@ -495,11 +498,11 @@ class Cart
             $cartItem->setTaxRate($id);
         } else {
             $cartItem->setTaxRate(config('cart.tax'));
-        }        
-        if ($id instanceof Buyable) {
-            $cartItem->setShippingAmount($id);
-        } 
-
+        }  
+        $cartItem->setShippingRate(config('cart.shipping'));
+      
+        // echo $cartItem->shipping;die;
+        // dd($cartItem); die;
         return $cartItem;
     }
 

@@ -63,13 +63,19 @@ class CartItem implements Arrayable
      * @var int|float
      */
     private $taxRate = 0;    
-
     /**
-     * The shipping for the cart item.
+     * The shipping  rate for the cart item.
      *
      * @var int|float
      */
-    private $shipping = 0;
+    private $shippingRate = 0;    
+
+    /**
+     * The weight for the cart item.
+     *
+     * @var int|float
+     */
+    private $weight;
 
     /**
      * CartItem constructor.
@@ -79,13 +85,16 @@ class CartItem implements Arrayable
      * @param float      $price
      * @param array      $options
      */
-    public function __construct($id, $name, $price, array $options = [])
+    public function __construct($id, $name, $price, $weight, array $options = [])
     {
         if(empty($id)) {
             throw new \InvalidArgumentException('Please supply a valid identifier.');
         }
         if(empty($name)) {
             throw new \InvalidArgumentException('Please supply a valid name.');
+        }        
+        if(empty($weight)) {
+            throw new \InvalidArgumentException('Please supply a valid weight.');
         }
         if(strlen($price) < 0 || ! is_numeric($price)) {
             throw new \InvalidArgumentException('Please supply a valid price.');
@@ -93,6 +102,7 @@ class CartItem implements Arrayable
 
         $this->id       = $id;
         $this->name     = $name;
+        $this->weight   = $weight;
         $this->price    = floatval($price);
         $this->options  = new CartItemOptions($options);
         $this->rowId = $this->generateRowId($id, $options);
@@ -202,6 +212,7 @@ class CartItem implements Arrayable
         $this->id       = $item->getBuyableIdentifier($this->options);
         $this->name     = $item->getBuyableDescription($this->options);
         $this->price    = $item->getBuyablePrice($this->options);
+        $this->weight   = $item->getBuyableWeight($this->options);
         $this->priceTax = $this->price + $this->tax;
     }
 
@@ -217,6 +228,7 @@ class CartItem implements Arrayable
         $this->qty      = array_get($attributes, 'qty', $this->qty);
         $this->name     = array_get($attributes, 'name', $this->name);
         $this->price    = array_get($attributes, 'price', $this->price);
+        $this->weight   = array_get($attributes, 'weight', $this->weight);
         $this->priceTax = $this->price + $this->tax;
         $this->options  = new CartItemOptions(array_get($attributes, 'options', $this->options));
 
@@ -279,8 +291,12 @@ class CartItem implements Arrayable
 
         if($attribute === 'tax') {
             return $this->price * ($this->taxRate / 100);
+        }        
+
+        if($attribute === 'shipping') {
+            return  $this->qty * $this->weight * $this->shippingRate ;
         }
-             
+        
         if($attribute === 'taxTotal') {
             return $this->tax * $this->qty;
         }
@@ -301,7 +317,7 @@ class CartItem implements Arrayable
      */
     public static function fromBuyable(Buyable $item, array $options = [])
     {
-        return new self($item->getBuyableIdentifier($options), $item->getBuyableDescription($options), $item->getBuyablePrice($options), $options);
+        return new self($item->getBuyableIdentifier($options), $item->getBuyableDescription($options), $item->getBuyablePrice($options),$item->getBuyableWeight($options), $options);
     }
 
     /**
@@ -314,7 +330,7 @@ class CartItem implements Arrayable
     {
         $options = array_get($attributes, 'options', []);
 
-        return new self($attributes['id'], $attributes['name'], $attributes['price'], $options);
+        return new self($attributes['id'], $attributes['name'], $attributes['price'],$attributes['weight'], $options);
     }
 
     /**
@@ -326,9 +342,9 @@ class CartItem implements Arrayable
      * @param array      $options
      * @return \Gloudemans\Shoppingcart\CartItem
      */
-    public static function fromAttributes($id, $name, $price, array $options = [])
+    public static function fromAttributes($id, $name, $price, $weight, array $options = [])
     {
-        return new self($id, $name, $price, $options);
+        return new self($id, $name, $price, $weight, $options);
     }
 
     /**
@@ -358,10 +374,11 @@ class CartItem implements Arrayable
             'name'     => $this->name,
             'qty'      => $this->qty,
             'price'    => $this->price,
+            'weight'   => $this->weight,
             'options'  => $this->options,
             'tax'      => $this->tax,
             'subtotal' => $this->subtotal,
-            'shipping' => $this->shipping,
+            'shipping' => $this->shipping
         ];
     }
 
@@ -388,13 +405,15 @@ class CartItem implements Arrayable
 
         return number_format($value, $decimals, $decimalPoint, $thousandSeperator);
     }
-    public function setShippingAmount($shipping_amount)
+    /**
+     * setting shipping rate for the cart
+     * @author Parth Gupta
+     * @datetime 2017-03-01T11:54:35+0530
+     * @param   object
+     */
+    public function setShippingRate($shipping_rate)
     {
-        if ($shipping_amount instanceof Buyable ) {
-            $this->shipping = $shipping_amount->shipping_amount;
-        } else {
-            $this->shipping = $shipping_amount;
-        }
+        $this->shippingRate = $shipping_rate;
         
         return $this;
     }
