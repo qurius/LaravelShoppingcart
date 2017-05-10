@@ -238,10 +238,13 @@ class Cart
     {
         $content = $this->getContent();
 
-        $total = $content->reduce(function ($total, CartItem $cartItem) {
-            return $total + ($cartItem->qty * $cartItem->priceTax) +  ($cartItem->qty * $cartItem->shipping);
-        }, 0);
-
+        // $total = $content->reduce(function ($total, CartItem $cartItem) {
+        //     return $total + ($cartItem->qty * $cartItem->priceTax) +  ($cartItem->qty * $cartItem->shipping);
+        // }, 0);
+        $shipping = floatval(str_replace(",", "",  $this->shipping())) ;
+        $subtotal = floatval(str_replace(",", "",  $this->subtotal())) ;
+        $tax = floatval(str_replace(",", "",  $this->tax())) ;
+        $total = $shipping + $subtotal + $tax;
         return $this->numberFormat($total, $decimals, $decimalPoint, $thousandSeperator);
     }
 
@@ -258,7 +261,7 @@ class Cart
         $content = $this->getContent();
 
         $tax = $content->reduce(function ($tax, CartItem $cartItem) {
-            return $tax + ($cartItem->qty * $cartItem->tax);
+            return $tax + ($cartItem->tax);
         }, 0);
 
         return $this->numberFormat($tax, $decimals, $decimalPoint, $thousandSeperator);
@@ -271,6 +274,7 @@ class Cart
         $shipping = $content->reduce(function ($shipping, CartItem $cartItem) {
             return $shipping + $cartItem->shipping;
         }, 0);
+        $shipping = $shipping > 500?$shipping:500;
 
         return $this->numberFormat($shipping, $decimals, $decimalPoint, $thousandSeperator);
     }
@@ -381,7 +385,11 @@ class Cart
         $content = $this->getContent();
 
         if ($this->storedCartWithIdentifierExists($identifier)) {
-            throw new CartAlreadyStoredException("A cart with identifier {$identifier} was already stored.");
+                $this->getConnection()->table($this->getTableName())->where(['identifier' => $identifier,])->update([
+                    'instance' => $this->currentInstance(),
+                    'content' => serialize($content)
+                ]);
+            // throw new CartAlreadyStoredException("A cart with identifier {$identifier} was already stored.");
         }
 
         $this->getConnection()->table($this->getTableName())->insert([

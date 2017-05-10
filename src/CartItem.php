@@ -290,7 +290,7 @@ class CartItem implements Arrayable
         }
 
         if($attribute === 'tax') {
-            return $this->price * ($this->taxRate / 100);
+            return $this->qty * $this->taxRate;
         }        
 
         if($attribute === 'shipping') {
